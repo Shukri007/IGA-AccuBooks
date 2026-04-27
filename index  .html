@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IGA Accubooks</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      background: #f4f6f9;
+    }
+
+    .hidden { display: none; }
+
+    .container {
+      padding: 20px;
+    }
+
+    input {
+      display: block;
+      padding: 10px;
+      margin: 5px 0;
+      width: 250px;
+    }
+
+    button {
+      padding: 10px;
+      background: #2c3e50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    .nav {
+      background: #2c3e50;
+      padding: 10px;
+      color: white;
+    }
+
+    .nav button {
+      background: #34495e;
+      margin-right: 5px;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin: 10px;
+      display: inline-block;
+      width: 180px;
+    }
+
+    ul {
+      background: white;
+      padding: 10px;
+      width: 300px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- LOGIN / REGISTER -->
+<div id="auth" class="container">
+  <h1>IGA Accubooks</h1>
+
+  <h3>Register</h3>
+  <input id="regName" placeholder="Name">
+  <input id="regEmail" placeholder="Email">
+  <input id="regPassword" type="password" placeholder="Password">
+  <button onclick="register()">Register</button>
+
+  <hr>
+
+  <h3>Login</h3>
+  <input id="loginEmail" placeholder="Email">
+  <input id="loginPassword" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="app" class="hidden">
+
+  <div class="nav">
+    <button onclick="showPage('dashboard')">Dashboard</button>
+    <button onclick="showPage('invoices')">Invoices</button>
+    <button onclick="showPage('expenses')">Expenses</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div id="dashboard" class="container">
+    <h2>Dashboard</h2>
+
+    <div class="card">
+      <h3>Invoices</h3>
+      <p id="totalInvoices">0</p>
+    </div>
+
+    <div class="card">
+      <h3>Expenses</h3>
+      <p id="totalExpenses">0</p>
+    </div>
+
+    <div class="card">
+      <h3>Profit</h3>
+      <p id="netProfit">0</p>
+    </div>
+  </div>
+
+  <!-- INVOICES -->
+  <div id="invoices" class="container hidden">
+    <h2>Invoices</h2>
+
+    <input id="client" placeholder="Client Name">
+    <input id="amount" placeholder="Amount">
+    <button onclick="addInvoice()">Add Invoice</button>
+
+    <ul id="invoiceList"></ul>
+  </div>
+
+  <!-- EXPENSES -->
+  <div id="expenses" class="container hidden">
+    <h2>Expenses</h2>
+
+    <input id="expenseName" placeholder="Expense Name">
+    <input id="expenseAmount" placeholder="Amount">
+    <button onclick="addExpense()">Add Expense</button>
+
+    <ul id="expenseList"></ul>
+  </div>
+
+</div>
+
+<script>
+/* ======================
+   AUTH SYSTEM
+====================== */
+
+function register() {
+  let user = {
+    name: regName.value,
+    email: regEmail.value,
+    password: regPassword.value
+  };
+
+  localStorage.setItem("user", JSON.stringify(user));
+  alert("Registered Successfully");
+}
+
+function login() {
+  let user = JSON.parse(localStorage.getItem("user"));
+
+  if (!user) return alert("No account found");
+
+  if (loginEmail.value === user.email && loginPassword.value === user.password) {
+    document.getElementById("auth").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    loadAll();
+  } else {
+    alert("Wrong login details");
+  }
+}
+
+function logout() {
+  location.reload();
+}
+
+/* ======================
+   DATA STORAGE
+====================== */
+
+let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+
+/* ======================
+   INVOICES
+====================== */
+
+function addInvoice() {
+  invoices.push({
+    client: client.value,
+    amount: Number(amount.value)
+  });
+
+  localStorage.setItem("invoices", JSON.stringify(invoices));
+  showInvoices();
+  updateDashboard();
+}
+
+function showInvoices() {
+  let list = document.getElementById("invoiceList");
+  list.innerHTML = "";
+
+  invoices.forEach(i => {
+    list.innerHTML += `<li>${i.client} - $${i.amount}</li>`;
+  });
+}
+
+/* ======================
+   EXPENSES
+====================== */
+
+function addExpense() {
+  expenses.push({
+    name: expenseName.value,
+    amount: Number(expenseAmount.value)
+  });
+
+  localStorage.setItem("expenses", JSON.stringify(expenses));
+  showExpenses();
+  updateDashboard();
+}
+
+function showExpenses() {
+  let list = document.getElementById("expenseList");
+  list.innerHTML = "";
+
+  expenses.forEach(e => {
+    list.innerHTML += `<li>${e.name} - $${e.amount}</li>`;
+  });
+}
+
+/* ======================
+   DASHBOARD
+====================== */
+
+function updateDashboard() {
+  let totalInv = invoices.reduce((a,b) => a + b.amount, 0);
+  let totalExp = expenses.reduce((a,b) => a + b.amount, 0);
+
+  document.getElementById("totalInvoices").innerText = totalInv;
+  document.getElementById("totalExpenses").innerText = totalExp;
+  document.getElementById("netProfit").innerText = totalInv - totalExp;
+}
+
+/* ======================
+   PAGE NAVIGATION
+====================== */
+
+function showPage(page) {
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("invoices").classList.add("hidden");
+  document.getElementById("expenses").classList.add("hidden");
+
+  document.getElementById(page).classList.remove("hidden");
+
+  if (page === "invoices") showInvoices();
+  if (page === "expenses") showExpenses();
+  if (page === "dashboard") updateDashboard();
+}
+
+/* ======================
+   LOAD SYSTEM
+====================== */
+
+function loadAll() {
+  showInvoices();
+  showExpenses();
+  updateDashboard();
+}
+</script>
+
+</body>
+</html>
